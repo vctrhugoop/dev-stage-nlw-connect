@@ -6,15 +6,20 @@ import { User, Mail, ArrowRight } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { subscribeToEvent } from "@/http/api";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const subscriptionSchema = z.object({
   name: z.string().min(2, "Digite sem nome completo"),
-  mail: z.string().email("Digite um e-mail válido"),
+  email: z.string().email("Digite um e-mail válido"),
 });
 
 type SubscriptionSchema = z.infer<typeof subscriptionSchema>;
 
 export function SubscriptionForm() {
+  const { push } = useRouter();
+  const searchParams = useSearchParams();
+
   const {
     register,
     handleSubmit,
@@ -23,8 +28,16 @@ export function SubscriptionForm() {
     resolver: zodResolver(subscriptionSchema),
   });
 
-  function onSubcribe(data: SubscriptionSchema) {
-    console.log(data);
+  async function onSubcribe({ name, email }: SubscriptionSchema) {
+    const referrer = searchParams.get("referrer");
+
+    const { subscriberId } = await subscribeToEvent({
+      name,
+      email,
+      referrer,
+    });
+
+    push(`/invite/${subscriberId}`);
   }
 
   return (
@@ -64,13 +77,13 @@ export function SubscriptionForm() {
             <InputField
               type="mail"
               placeholder="Digite seu melhor e-mail"
-              {...register("mail")}
+              {...register("email")}
             />
           </InputRoot>
 
-          {errors.mail && (
+          {errors.email && (
             <p className="text-danger text-sm font-semibold">
-              {errors.mail.message}
+              {errors.email.message}
             </p>
           )}
         </div>
